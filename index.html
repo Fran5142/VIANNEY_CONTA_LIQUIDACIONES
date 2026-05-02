@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- 
+    ====================================================================
+    Proyecto: Generador de Liquidaciones de Sueldo (HTML a PDF)
+    Desarrollador: C1º (Met.) Francisco Salas Muñoz
+    ====================================================================
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Liquidación</title>
+    <!-- Librería para generar el PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #525659;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* ----- PANEL DEL FORMULARIO ----- */
+        .controls-panel {
+            width: 30%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        .controls-panel h2 { font-size: 1.2rem; color: #333; margin-bottom: 15px; }
+        .controls-panel h3 { font-size: 1rem; color: #0056b3; margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 0.8rem; margin-bottom: 3px; font-weight: bold; color: #444; }
+        .form-group input, .form-group select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        
+        .selector-empresa { background-color: #e9ecef; border-color: #0056b3 !important; font-weight: bold; }
+
+        .btn-generar {
+            width: 100%; padding: 12px; background-color: #28a745; color: white; border: none;
+            border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px;
+        }
+        .btn-generar:hover { background-color: #218838; }
+
+        .autor-credito {
+            margin-top: 25px;
+            font-size: 0.75rem;
+            color: #666;
+            text-align: center;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        /* ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- */
+        .preview-panel {
+            width: 70%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .document-page {
+            width: 215.9mm;
+            min-height: 279.4mm;
+            background: white;
+            border: none; 
+            padding: 12mm 15mm;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11px;
+            color: #000;
+        }
+
+        .content-box {
+            border: 2px solid black;
+            padding: 20px;
+            margin-top: 5px;
+        }
+
+        .w-100 { width: 100%; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: bold; }
+        .border-collapse { border-collapse: collapse; }
+        
+        .table-bordered { border: 0.5px solid black; }
+        .table-bordered th, .table-bordered td {
+            border: 0.5px solid black;
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+        
+        .celda-letras {
+            font-size: 11.5px;
+            text-align: justify;
+            line-height: 1.2;
+            vertical-align: middle;
+        }
+
+        .legal-text {
+            font-size: 10px;
+            text-align: justify;
+            margin-top: 40px;
+            padding-top: 10px; 
+            border-top: 1px solid black; 
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ----- FORMULARIO DE INGRESO ----- -->
+    <div class="controls-panel">
+        <h2>Datos de la Liquidación</h2>
+        
+        <!-- SECCIÓN EMPRESA -->
+        <h3>Empresa Empleadora</h3>
+        <div class="form-group">
+            <label>Cargar Empresa Automática</label>
+            <select id="sel_empresa" class="selector-empresa" onchange="cargarEmpresaBase()">
+                <option value="empresa_uno">Comercial Santa Teresa SPA</option>
+                <option value="empresa_dos">Servicios Forestales Henriquez SPA</option>
+                <option value="empresa_tres">Rinconada de sabores SPA</option>
+                <option value="empresa_cuatro">MACROPS-LAB MICROBIOLOGÍA APLICADA A CULTIVOS SPA</option>
+                <option value="empresa_cinco">CHEHUIN AUTOMATIZACIÓN INDUSTRIAL SPA</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Razón Social</label><input type="text" id="in_emp_razon" value="Comercial Santa Teresa SPA" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>RUT Empresa</label><input type="text" id="in_emp_rut" value="78.230.921-8" oninput="formatearRUT(this)" maxlength="12"></div>
+        <div class="form-group"><label>Dirección</label><input type="text" id="in_emp_dir" value="Andrés Bello #375 Gorbea" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Firma: Nombre Representante</label><input type="text" id="in_emp_rep" value="R.L. Angélica Del Carmen Abello Valdebenito" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Firma: RUT Representante</label><input type="text" id="in_emp_rut_rep" value="15.250.363-6" oninput="formatearRUT(this)" maxlength="12"></div>
+
+        <!-- SECCIÓN DOCUMENTO Y FECHAS -->
+        <h3>Documento y Fechas</h3>
+        <div class="form-group"><label>Nº de Hoja / Folio</label><input type="text" id="in_folio" value="1" oninput="actualizarDoc()"></div>
+        <div class="form-group">
+            <label>Período de Pago</label>
+            <select id="in_periodo" onchange="actualizarDoc()">
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril" selected>Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+                <option value="Julio">Julio</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Fecha de Ingreso</label><input type="text" id="in_fecha_ingreso" value="01-11-2024" oninput="formatearFecha(this)" maxlength="10"></div>
+        <div class="form-group"><label>Fecha de Liquidación</label><input type="text" id="in_fecha_liq" value="30-04-2026" oninput="formatearFecha(this)" maxlength="10"></div>
+
+        <!-- SECCIÓN TRABAJADOR -->
+        <h3>Trabajador</h3>
+        <div class="form-group"><label>Nombre</label><input type="text" id="in_nombre" value="Maria Cecilia Escobar Sanhueza" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>RUT</label><input type="text" id="in_rut" value="18.485.133-4" oninput="formatearRUT(this)" maxlength="12"></div>
+        <div class="form-group"><label>Cargo</label><input type="text" id="in_cargo" value="Ayudante Fabrica de Cecinas" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Días Trabajados</label><input type="number" id="in_dias" value="30" oninput="actualizarDoc()"></div>
+        
+        <div class="form-group">
+            <label>AFP</label>
+            <select id="in_nom_afp" onchange="actualizarDoc()">
+                <option value="Modelo" selected>Modelo</option>
+                <option value="Uno">Uno</option>
+                <option value="Provida">Provida</option>
+                <option value="Habitat">Habitat</option>
+                <option value="Capital">Capital</option>
+                <option value="Cuprum">Cuprum</option>
+                <option value="PlanVital">PlanVital</option>
+                <option value="Capredena">Capredena</option>
+            </select>
+        </div>
+
+        <div class="form-group"><label>ISAPRE/FONASA</label><input type="text" id="in_nom_salud" value="Fonasa" oninput="actualizarDoc()"></div>
+
+        <!-- SECCIÓN HABERES -->
+        <h3>Haberes</h3>
+        <div class="form-group"><label>Sueldo Base ($)</label><input type="number" id="in_sueldo_base" value="539000" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Bonificaciones ($)</label><input type="number" id="in_bonos" value="0" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Gratificación Legal ($)</label><input type="number" id="in_gratificacion" value="134750" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Asig. Colación ($)</label><input type="number" id="in_colacion" value="0" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Asig. Familiar ($)</label><input type="number" id="in_familiar" value="0" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Otros Haberes ($)</label><input type="number" id="in_otros_haberes" value="0" oninput="actualizarDoc()"></div>
+
+        <!-- SECCIÓN DESCUENTOS -->
+        <h3>Descuentos</h3>
+        <div class="form-group"><label>Descuento Previsional AFP ($)</label><input type="number" id="in_afp" value="71283" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Descuento Salud ($)</label><input type="number" id="in_fonasa" value="47163" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Seguro Cesantía ($)</label><input type="number" id="in_cesantia" value="4043" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Impuesto Único ($)</label><input type="number" id="in_impuesto" value="0" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Descuento Préstamos ($)</label><input type="number" id="in_prestamo" value="0" oninput="actualizarDoc()"></div>
+        <div class="form-group"><label>Otros Descuentos ($)</label><input type="number" id="in_otros_desc" value="0" oninput="actualizarDoc()"></div>
+
+        <!-- SECCIÓN CIERRE Y LETRAS MANUALES -->
+        <h3>Cierre</h3>
+        <div class="form-group"><label>Anticipo de Sueldo ($)</label><input type="number" id="in_anticipo" value="16910" oninput="actualizarDoc()"></div>
+        
+        <div class="form-group">
+            <label>Sueldo Líquido en Letras (Automático/Editable)</label>
+            <input type="text" id="in_letras_manual" oninput="actualizarLetrasManual()">
+        </div>
+
+        <button class="btn-generar" onclick="generarPDF()">Descargar PDF Carta</button>
+
+        <div class="autor-credito">
+            Dev: <strong>C1º (Met.) Francisco Salas Muñoz</strong>
+        </div>
+    </div>
+
+    <!-- ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- -->
+    <div class="preview-panel">
+        <div class="document-page" id="documento-pdf">
+            
+            <div class="content-box">
+                
+                <!-- ENCABEZADO CORREGIDO: ALINEACIÓN SUPERIOR -->
+                <table class="w-100 border-collapse" style="margin-bottom: 25px;">
+                    <tr>
+                        <td style="width: 25%; text-align: left; vertical-align: top; border: none;">
+                            <img id="img_logo_empresa" src="logo comercial santa teresa spa.png" alt="Logo Empresa" style="max-width: 130px; height: auto; display: block;">
+                        </td>
+                        <td style="width: 50%; text-align: center; vertical-align: top; padding-top: 10px; border: none;">
+                            <span style="font-weight: bold; font-size: 15px;">LIQUIDACIÓN DE SUELDO</span>
+                        </td>
+                        <td style="width: 25%; text-align: right; vertical-align: top; padding-top: 10px; border: none;">
+                            <span style="font-weight: bold; font-size: 12px;">N° <span id="out_folio">1</span></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- DATOS EMPLEADOR Y TRABAJADOR -->
+                <table class="w-100 border-collapse" style="margin-bottom: 20px; font-size: 11px; table-layout: fixed; width: 100%;">
+                    <tr>
+                        <td style="width: 22%; padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Razón Social de la Empresa:</td>
+                        <td style="width: 33%; padding: 3px 0; border: none; font-weight: bold; vertical-align: top; word-wrap: break-word;" id="out_emp_razon">Comercial Santa Teresa SPA</td>
+                        <td style="width: 15%; padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Cargo:</td>
+                        <td style="width: 30%; padding: 3px 0; border: none; vertical-align: top; word-wrap: break-word;" id="out_cargo">Ayudante Fabrica de Cecinas</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">RUT Empresa:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_emp_rut">78.230.921-8</td>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Período de Pago:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_periodo">Abril</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Dirección:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top; word-wrap: break-word;" id="out_emp_dir">Andrés Bello #375 Gorbea</td>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Fecha de Ingreso:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_fecha_ingreso">01-11-2024</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Nombre del Trabajador:</td>
+                        <td style="padding: 3px 0; border: none; font-weight: bold; vertical-align: top; word-wrap: break-word;" id="out_nombre">Maria Cecilia Escobar Sanhueza</td>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">AFP:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_nom_afp_doc">Modelo</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">RUT Trabajador:</td>
+                        <td style="padding: 3px 0; border: none; font-weight: bold; vertical-align: top;" id="out_rut">18.485.133-4</td>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">ISAPRE/FONASA:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_nom_salud">Fonasa</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Días trabajados:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_dias">30</td>
+                        <td style="padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Fecha liquidación:</td>
+                        <td style="padding: 3px 0; border: none; vertical-align: top;" id="out_fecha_liq">30-04-2026</td>
+                    </tr>
+                </table>
+
+                <!-- TABLAS HABERES Y DESCUENTOS -->
+                <table class="w-100 border-collapse" style="margin-bottom: 25px;">
+                    <tr>
+                        <td style="width: 48%; padding: 0; vertical-align: top; border: none;">
+                            <table class="w-100 border-collapse table-bordered">
+                                <tr><th class="text-center">Detalle de Haberes</th><th class="text-center" style="width: 80px;">Monto</th></tr>
+                                <tr><td>Sueldo Base:</td><td class="text-right" id="out_sueldo_base">$539.000</td></tr>
+                                <tr><td>Bonificaciones:</td><td class="text-right" id="out_bonos">$0</td></tr>
+                                <tr><td>Gratificación Legal:</td><td class="text-right" id="out_gratificacion">$134.750</td></tr>
+                                <tr><td>Asignación de Colación:</td><td class="text-right" id="out_colacion">$0</td></tr>
+                                <tr><td>Asignación familiar:</td><td class="text-right" id="out_familiar">$0</td></tr>
+                                <tr><td>Otros Haberes:</td><td class="text-right" id="out_otros_haberes">$0</td></tr>
+                                <tr><td>Total Haberes:</td><td class="text-right" id="out_total_haberes">$673.750</td></tr>
+                            </table>
+                        </td>
+                        
+                        <td style="width: 4%; padding: 0; border: none;"></td>
+                        
+                        <td style="width: 48%; padding: 0; vertical-align: top; border: none;">
+                            <table class="w-100 border-collapse table-bordered">
+                                <tr><th class="text-center">Descuentos</th><th class="text-center" style="width: 80px;">Monto</th></tr>
+                                <tr><td>Descuento Previsional (AFP):</td><td class="text-right" id="out_afp">$71.283</td></tr>
+                                <tr><td>Descuento Salud - FONASA:</td><td class="text-right" id="out_fonasa">$47.163</td></tr>
+                                <tr><td>Seguro de Cesantía:</td><td class="text-right" id="out_cesantia">$4.043</td></tr>
+                                <tr><td>Impuesto Único:</td><td class="text-right" id="out_impuesto">$0</td></tr>
+                                <tr><td>Descuento por Préstamos:</td><td class="text-right" id="out_prestamo">$0</td></tr>
+                                <tr><td>Otros Descuentos:</td><td class="text-right" id="out_otros_desc">$0</td></tr>
+                                <tr><td>Total Descuentos:</td><td class="text-right" id="out_total_descuentos">$122.488</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- TABLA RESUMEN FINAL -->
+                <table class="border-collapse table-bordered" style="width: 82%; margin: 0 auto; margin-bottom: 60px;">
+                    <tr>
+                        <th class="text-center" style="width: 50%;">Resumen Final</th>
+                        <th class="text-center" style="width: 50%;">Monto</th>
+                    </tr>
+                    <tr>
+                        <td>Total Haberes:</td>
+                        <td class="text-right" id="res_haberes">$673.750</td>
+                    </tr>
+                    <tr>
+                        <td>Total Descuentos:</td>
+                        <td class="text-right" id="res_descuentos">$122.488</td>
+                    </tr>
+                    <tr>
+                        <td>Anticipo de sueldo:</td>
+                        <td class="text-right" id="out_anticipo">$16.910</td>
+                    </tr>
+                    <tr>
+                        <td>Sueldo Liquido a Pagar $:</td>
+                        <td class="text-right" id="out_liquido">$534.352</td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: middle;">Sueldo Liquido a Pagar letras:</td>
+                        <td class="celda-letras" id="out_letras">Quinientos treinta y cuatro mil trescientos cincuenta y dos pesos.</td>
+                    </tr>
+                </table>
+
+                <!-- FIRMAS -->
+                <table class="w-100 border-collapse" style="text-align: center; font-weight: bold; font-size: 11px;">
+                    <tr>
+                        <td style="width: 35%; border: none; vertical-align: bottom;">
+                            <div style="border-top: 1px solid black; width: 100%; margin: 0 auto 5px auto;"></div>
+                            FIRMA TRABAJADOR<br>
+                            <span id="sig_nombre">Maria Cecilia Escobar Sanhueza</span><br>
+                            RUN <span id="sig_rut">18.485.133-4</span>
+                        </td>
+                        <td style="width: 30%; border: none;"></td>
+                        <td style="width: 35%; border: none; vertical-align: bottom;">
+                            <div style="border-top: 1px solid black; width: 100%; margin: 0 auto 5px auto;"></div>
+                            FIRMA DEL EMPLEADOR<br>
+                            <span id="sig_empresa_rep">R.L. Angélica Del Carmen Abello Valdebenito</span><br>
+                            RUN: <span id="sig_empresa_rut_rep">15.250.363-6</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- TEXTO LEGAL -->
+                <div class="legal-text">
+                    Declaro haber recibido en conformidad el pago total de mi remuneración correspondiente al periodo indicado, incluyendo todos los haberes y descuentos detallados en la presente liquidación de sueldo. Con esto, no tengo reclamaciones pendientes respecto al monto liquidado.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ----- SCRIPT PARA LÓGICA Y PDF ----- -->
+    <script>
+        // === BASE DE DATOS DE EMPRESAS ===
+        const baseDatosEmpresas = {
+            "empresa_uno": {
+                razon: "Comercial Santa Teresa SPA",
+                rut: "78.230.921-8",
+                dir: "Andrés Bello #375 Gorbea",
+                rep_nombre: "R.L. Angélica Del Carmen Abello Valdebenito",
+                rep_rut: "15.250.363-6",
+                logo: "logo comercial santa teresa spa.png"
+            },
+            "empresa_dos": {
+                razon: "Servicios Forestales Henriquez SPA",
+                rut: "77.492.947-9",
+                dir: "Laguna Icalma 6354 Valle verde, Estación Central",
+                rep_nombre: "Servicios Forestales Henriquez SPA",
+                rep_rut: "77.492.947-9",
+                logo: "***"
+            },
+            "empresa_tres": {
+                razon: "Rinconada de sabores SPA",
+                rut: "77.858.111-6",
+                dir: "Lord Cochrane Nº 370, Gorbea",
+                rep_nombre: "R.L. José Heraldo Sáez Salazar",
+                rep_rut: "8.451.084-K",
+                logo: "logo rinconada de sabores spa.png"
+            },
+            "empresa_cuatro": {
+                razon: "MACROPS-LAB MICROBIOLOGÍA APLICADA A CULTIVOS SPA",
+                rut: "77388704-7",
+                dir: "PADRE ALBERTO HURTADO 1550 JUAN PABLO II COMUNA TEMUCO",
+                rep_nombre: "R.L. IGNACIO ANDRES JOFRE FERNANDEZ",
+                rep_rut: "17289534-4",
+                logo: "***"
+            },
+            "empresa_cinco": {
+                razon: "CHEHUIN AUTOMATIZACIÓN INDUSTRIAL SPA",
+                rut: "77.474.023-6",
+                dir: "A Varas 979 Oficina 801, Temuco",
+                rep_nombre: "R.L. Juan Elías Chehuin Puelpan",
+                rep_rut: "19.175.427-1",
+                logo: "***"
+            }
+        };
+
+        function cargarEmpresaBase() {
+            const seleccion = document.getElementById('sel_empresa').value;
+            const empresa = baseDatosEmpresas[seleccion];
+
+            if(empresa) {
+                document.getElementById('in_emp_razon').value = empresa.razon;
+                document.getElementById('in_emp_rut').value = empresa.rut;
+                document.getElementById('in_emp_dir').value = empresa.dir;
+                document.getElementById('in_emp_rep').value = empresa.rep_nombre;
+                document.getElementById('in_emp_rut_rep').value = empresa.rep_rut;
+                document.getElementById('img_logo_empresa').src = empresa.logo;
+                actualizarDoc();
+            }
+        }
+
+        function formatearRUT(input) {
+            let valor = input.value.replace(/[^0-9kK]/ig, '');
+            if (valor.length === 0) {
+                input.value = '';
+                actualizarDoc();
+                return;
+            }
+            let cuerpo = valor.slice(0, -1);
+            let dv = valor.slice(-1).toUpperCase();
+            
+            if (valor.length === 1) {
+                input.value = valor;
+            } else {
+                cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                input.value = cuerpo + '-' + dv;
+            }
+            actualizarDoc();
+        }
+
+        function formatearFecha(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor.length > 2 && valor.length <= 4) {
+                valor = valor.slice(0, 2) + '-' + valor.slice(2);
+            } else if (valor.length > 4) {
+                valor = valor.slice(0, 2) + '-' + valor.slice(2, 4) + '-' + valor.slice(4, 8);
+            }
+            input.value = valor;
+            actualizarDoc();
+        }
+
+        const fPesos = (num) => {
+            return num === 0 ? "$0" : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(num);
+        };
+
+        function numeroALetras(num) {
+            if(num === 0) return 'Cero pesos.';
+            const unidades = ['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'];
+            const decenas = ['','diez','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+            const especiales = {11:'once',12:'doce',13:'trece',14:'catorce',15:'quince',16:'dieciseis',17:'diecisiete',18:'dieciocho',19:'diecinueve', 21:'veintiuno', 22:'veintidos', 23:'veintitres', 24:'veinticuatro', 25:'veinticinco', 26:'veintiseis', 27:'veintisiete', 28:'veintiocho', 29:'veintinueve'};
+            const centenas = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+
+            function convertir(n) {
+                if(n===100) return 'cien';
+                if(n<10) return unidades[n];
+                if(n<30) return especiales[n] || decenas[Math.floor(n/10)];
+                if(n<100) return decenas[Math.floor(n/10)] + (n%10 !== 0 ? ' y ' + unidades[n%10] : '');
+                if(n<1000) return centenas[Math.floor(n/100)] + (n%100 !== 0 ? ' ' + convertir(n%100) : '');
+                if(n===1000) return 'mil';
+                if(n<2000) return 'mil ' + (n%1000 !== 0 ? convertir(n%1000) : '');
+                if(n<1000000) return convertir(Math.floor(n/1000)) + ' mil ' + (n%1000 !== 0 ? convertir(n%1000) : '');
+                if(n===1000000) return 'un millón';
+                if(n<2000000) return 'un millón ' + (n%1000000 !== 0 ? convertir(n%1000000) : '');
+                return convertir(Math.floor(n/1000000)) + ' millones ' + (n%1000000 !== 0 ? convertir(n%1000000) : '');
+            }
+            
+            let texto = convertir(num) + ' pesos.';
+            return texto.charAt(0).toUpperCase() + texto.slice(1);
+        }
+
+        function actualizarLetrasManual() {
+            document.getElementById('out_letras').innerText = document.getElementById('in_letras_manual').value;
+        }
+
+        function actualizarDoc() {
+            document.getElementById('out_folio').innerText = document.getElementById('in_folio').value;
+            document.getElementById('out_periodo').innerText = document.getElementById('in_periodo').value;
+            document.getElementById('out_fecha_ingreso').innerText = document.getElementById('in_fecha_ingreso').value;
+            document.getElementById('out_fecha_liq').innerText = document.getElementById('in_fecha_liq').value;
+
+            document.getElementById('out_nombre').innerText = document.getElementById('in_nombre').value;
+            document.getElementById('sig_nombre').innerText = document.getElementById('in_nombre').value;
+            document.getElementById('out_rut').innerText = document.getElementById('in_rut').value;
+            document.getElementById('sig_rut').innerText = document.getElementById('in_rut').value;
+            document.getElementById('out_cargo').innerText = document.getElementById('in_cargo').value;
+            document.getElementById('out_dias').innerText = document.getElementById('in_dias').value;
+            
+            document.getElementById('out_nom_afp_doc').innerText = document.getElementById('in_nom_afp').value;
+            document.getElementById('out_nom_salud').innerText = document.getElementById('in_nom_salud').value;
+
+            document.getElementById('out_emp_razon').innerText = document.getElementById('in_emp_razon').value;
+            document.getElementById('out_emp_rut').innerText = document.getElementById('in_emp_rut').value;
+            document.getElementById('out_emp_dir').innerText = document.getElementById('in_emp_dir').value;
+            
+            document.getElementById('sig_empresa_rep').innerText = document.getElementById('in_emp_rep').value;
+            document.getElementById('sig_empresa_rut_rep').innerText = document.getElementById('in_emp_rut_rep').value;
+
+            const sueldoBase = Number(document.getElementById('in_sueldo_base').value) || 0;
+            const gratificacion = Number(document.getElementById('in_gratificacion').value) || 0;
+            const bonos = Number(document.getElementById('in_bonos').value) || 0;
+            const colacion = Number(document.getElementById('in_colacion').value) || 0;
+            const familiar = Number(document.getElementById('in_familiar').value) || 0;
+            const otrosHab = Number(document.getElementById('in_otros_haberes').value) || 0;
+
+            const afp = Number(document.getElementById('in_afp').value) || 0;
+            const fonasa = Number(document.getElementById('in_fonasa').value) || 0;
+            const cesantia = Number(document.getElementById('in_cesantia').value) || 0;
+            const impuesto = Number(document.getElementById('in_impuesto').value) || 0;
+            const prestamo = Number(document.getElementById('in_prestamo').value) || 0;
+            const otrosDesc = Number(document.getElementById('in_otros_desc').value) || 0;
+            const anticipo = Number(document.getElementById('in_anticipo').value) || 0;
+
+            const totalHaberes = sueldoBase + gratificacion + bonos + colacion + familiar + otrosHab;
+            const totalDescuentos = afp + fonasa + cesantia + impuesto + prestamo + otrosDesc;
+            const liquido = totalHaberes - totalDescuentos - anticipo;
+
+            document.getElementById('out_sueldo_base').innerText = fPesos(sueldoBase);
+            document.getElementById('out_gratificacion').innerText = fPesos(gratificacion);
+            document.getElementById('out_bonos').innerText = fPesos(bonos);
+            document.getElementById('out_colacion').innerText = fPesos(colacion);
+            document.getElementById('out_familiar').innerText = fPesos(familiar);
+            document.getElementById('out_otros_haberes').innerText = fPesos(otrosHab);
+            document.getElementById('out_total_haberes').innerText = fPesos(totalHaberes);
+
+            document.getElementById('out_afp').innerText = fPesos(afp);
+            document.getElementById('out_fonasa').innerText = fPesos(fonasa);
+            document.getElementById('out_cesantia').innerText = fPesos(cesantia);
+            document.getElementById('out_impuesto').innerText = fPesos(impuesto);
+            document.getElementById('out_prestamo').innerText = fPesos(prestamo);
+            document.getElementById('out_otros_desc').innerText = fPesos(otrosDesc);
+            document.getElementById('out_total_descuentos').innerText = fPesos(totalDescuentos);
+
+            document.getElementById('res_haberes').innerText = fPesos(totalHaberes);
+            document.getElementById('res_descuentos').innerText = fPesos(totalDescuentos);
+            document.getElementById('out_anticipo').innerText = fPesos(anticipo);
+            document.getElementById('out_liquido').innerText = fPesos(liquido);
+
+            const textoLiquido = numeroALetras(liquido);
+            document.getElementById('in_letras_manual').value = textoLiquido;
+            document.getElementById('out_letras').innerText = textoLiquido;
+        }
+
+        // Exportar PDF con nombre dinámico y manejo de errores
+        function generarPDF() {
+            const elemento = document.getElementById('documento-pdf');
+            
+            if (typeof html2pdf === 'undefined') {
+                alert("La librería para generar el PDF no pudo cargar. Revisa tu conexión a internet.");
+                return;
+            }
+
+            // OBTENER NOMBRE Y FECHA PARA EL ARCHIVO
+            const nombreTrabajador = document.getElementById('in_nombre').value.trim() || 'Trabajador';
+            const fechaLiq = document.getElementById('in_fecha_liq').value.trim() || 'Fecha';
+            const nombreArchivo = `Liquidacion - ${nombreTrabajador} - ${fechaLiq}.pdf`;
+
+            const opciones = {
+                margin:       0,
+                filename:     nombreArchivo, // USAMOS LA VARIABLE DEL NOMBRE
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opciones).from(elemento).save().catch(err => {
+                console.error("Error al generar PDF: ", err);
+                alert("El navegador bloqueó la descarga. Esto suele pasar si abres el HTML localmente (file://) y tienes una imagen (logo) insertada. Intenta borrar el src del logo o convertir la imagen a Base64.");
+            });
+        }
+
+        actualizarDoc();
+    </script>
+</body>
+</html>
