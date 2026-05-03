@@ -1,68 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- 
-    ====================================================================
-    Proyecto: Generador de Liquidaciones de Sueldo (HTML a PDF)
-    Desarrollador: C1º (Met.) Francisco Salas Muñoz
-    ====================================================================
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Liquidación</title>
     <!-- Librería para generar el PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
+        /* ----- VARIABLES DE COLOR (ESTILO ELEGANTE, FEMENINO Y MODERNO) ----- */
+        :root {
+            --bg-main: #faf5ff;       /* Fondo general morado extra claro */
+            --bg-panel: #ffffff;      /* Fondo del panel de control */
+            --bg-preview: #f3e8ff;    /* Fondo detrás del documento (lila suave) */
+            --primary: #d946ef;       /* Rosado/Fucsia moderno y elegante */
+            --primary-hover: #c026d3; /* Fucsia un poco más oscuro para interacciones */
+            --text-dark: #2e1065;     /* Texto principal oscuro con subtono morado */
+            --text-muted: #6b7280;    /* Texto secundario (etiquetas) */
+            --border-color: #e9d5ff;  /* Bordes en tono lila */
+            --input-focus: rgba(217, 70, 239, 0.25);
+            --success: #a855f7;       /* Morado vibrante para el botón principal */
+            --success-hover: #9333ea; /* Morado intenso para el hover del botón */
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #525659;
+            font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-main);
             margin: 0;
             padding: 20px;
             display: flex;
-            gap: 20px;
+            gap: 25px;
+            height: 100vh;
+            box-sizing: border-box;
         }
 
         /* ----- PANEL DEL FORMULARIO ----- */
         .controls-panel {
-            width: 30%;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-height: 95vh;
+            width: 32%;
+            background: var(--bg-panel);
+            padding: 30px;
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.08), 0 8px 10px -6px rgba(168, 85, 247, 0.04);
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
+            border: 1px solid #fdf4ff;
         }
 
-        .controls-panel h2 { font-size: 1.2rem; color: #333; margin-bottom: 15px; }
-        .controls-panel h3 { font-size: 1rem; color: #0056b3; margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 0.8rem; margin-bottom: 3px; font-weight: bold; color: #444; }
-        .form-group input, .form-group select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        /* Personalización del scrollbar para el panel */
+        .controls-panel::-webkit-scrollbar { width: 6px; }
+        .controls-panel::-webkit-scrollbar-track { background: transparent; }
+        .controls-panel::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 10px; }
+        .controls-panel::-webkit-scrollbar-thumb:hover { background: #c084fc; }
+
+        .logo-app {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-app img {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px; /* Por si la imagen lo requiere */
+        }
+
+        .controls-panel h2 { 
+            font-size: 1.5rem; 
+            color: var(--text-dark); 
+            margin-top: 0;
+            margin-bottom: 25px; 
+            font-weight: 800;
+            text-align: center;
+        }
         
-        .selector-empresa { background-color: #e9ecef; border-color: #0056b3 !important; font-weight: bold; }
+        .controls-panel h3 { 
+            font-size: 1rem; 
+            color: var(--primary); 
+            margin-top: 25px; 
+            margin-bottom: 15px;
+            border-bottom: 2px dashed var(--border-color); 
+            padding-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        
+        .form-group label { 
+            display: block; 
+            font-size: 0.85rem; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            color: var(--text-muted); 
+        }
+        
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 12px 14px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px;
+            box-sizing: border-box; 
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            transition: all 0.2s ease-in-out;
+            background-color: #fdfafc;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--input-focus);
+            background-color: #ffffff;
+        }
+        
+        .selector-empresa { 
+            background-color: #faf5ff !important; 
+            border-color: var(--success) !important; 
+            font-weight: bold; 
+            color: var(--success-hover) !important;
+            cursor: pointer;
+        }
 
         .btn-generar {
-            width: 100%; padding: 12px; background-color: #28a745; color: white; border: none;
-            border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px;
+            width: 100%; 
+            padding: 16px; 
+            background-color: var(--success); 
+            color: white; 
+            border: none;
+            border-radius: 12px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            margin-top: 30px; 
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+            transition: all 0.3s ease;
         }
-        .btn-generar:hover { background-color: #218838; }
-
-        .autor-credito {
-            margin-top: 25px;
-            font-size: 0.75rem;
-            color: #666;
-            text-align: center;
-            border-top: 1px dashed #ccc;
-            padding-top: 10px;
+        
+        .btn-generar:hover { 
+            background-color: var(--success-hover); 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(168, 85, 247, 0.45);
         }
 
         /* ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- */
         .preview-panel {
-            width: 70%;
+            width: 68%;
             display: flex;
             justify-content: center;
             align-items: flex-start;
+            background-color: var(--bg-preview);
+            border-radius: 20px;
+            padding: 40px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
         }
+
+        /* Personalización del scrollbar para la vista previa */
+        .preview-panel::-webkit-scrollbar { width: 8px; }
+        .preview-panel::-webkit-scrollbar-track { background: transparent; }
+        .preview-panel::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 10px; }
 
         .document-page {
             width: 215.9mm;
@@ -74,12 +168,15 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             color: #000;
+            box-shadow: 0 20px 25px -5px rgba(147, 51, 234, 0.1), 0 10px 10px -5px rgba(147, 51, 234, 0.04);
         }
 
+        /* Estilos internos del documento (Mantienen la apariencia de formato legal) */
         .content-box {
             border: 2px solid black;
             padding: 20px;
             margin-top: 5px;
+            background-color: white; 
         }
 
         .w-100 { width: 100%; }
@@ -117,6 +214,12 @@
 
     <!-- ----- FORMULARIO DE INGRESO ----- -->
     <div class="controls-panel">
+        
+        <!-- LOGO DE LA APP AÑADIDO AQUÍ -->
+        <div class="logo-app">
+            <img src="https://ia801006.us.archive.org/27/items/whats-app-image-2025-08-24-at-17.32.37/VIANNEY%20CONTA.png" alt="Logo Vianney Conta">
+        </div>
+
         <h2>Datos de la Liquidación</h2>
         
         <!-- SECCIÓN EMPRESA -->
@@ -211,10 +314,6 @@
         </div>
 
         <button class="btn-generar" onclick="generarPDF()">Descargar PDF Carta</button>
-
-        <div class="autor-credito">
-            Dev: <strong>C1º (Met.) Francisco Salas Muñoz</strong>
-        </div>
     </div>
 
     <!-- ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- -->
@@ -393,7 +492,7 @@
                 dir: "Lord Cochrane Nº 370, Gorbea",
                 rep_nombre: "R.L. José Heraldo Sáez Salazar",
                 rep_rut: "8.451.084-K",
-                logo: "logo rinconada de sabores spa.png"
+                logo: "Logo_Don_Jose_Web.svg"
             },
             "empresa_cuatro": {
                 razon: "MACROPS-LAB MICROBIOLOGÍA APLICADA A CULTIVOS SPA",
