@@ -1,0 +1,41 @@
+<svg id="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="100%" height="100%" style="max-width: 500px; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <defs>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&amp;family=Playfair+Display:ital,wght@0,700;0,900&amp;display=swap');
+                            .text-cecinas { font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 500; fill: #e28c11; letter-spacing: 0.12em; }
+                            .text-gorbea { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 400; fill: #e28c11; letter-spacing: 0.18em; }
+                            .text-donjose { font-family: 'Playfair Display', serif; font-size: 88px; font-weight: 900; fill: #000000; letter-spacing: -0.01em; }
+                            .text-js { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; fill: #e28c11; }
+                            .star { fill: #e28c11; }
+                        </style>
+                    </defs>
+                    
+                    <!-- Óvalos (Fondo y Bordes) -->
+                    <!-- El relleno blanco asegura que el logo no se pierda en fondos oscuros de la web -->
+                    <ellipse cx="300" cy="170" rx="295" ry="165" fill="#ffffff" stroke="#111111" stroke-width="2.5"/>
+                    <ellipse cx="300" cy="170" rx="285" ry="155" fill="none" stroke="#111111" stroke-width="1.5"/>
+
+                    <!-- Círculo Superior JS -->
+                    <circle cx="300" cy="50" r="32" fill="#000000"/>
+                    <text x="300" y="61" class="text-js" text-anchor="middle">Js</text>
+
+                    <!-- Texto CECINAS -->
+                    <text x="300" y="112" class="text-cecinas" text-anchor="middle">CECINAS</text>
+
+                    <!-- Texto Principal DON JOSÉ (Ligeramente estirado hacia arriba para imitar la tipografía original) -->
+                    <g transform="translate(300, 195) scale(1, 1.15)">
+                        <text x="0" y="0" class="text-donjose" text-anchor="middle">DON JOSÉ</text>
+                    </g>
+
+                    <!-- Estrellas (Arco centralizado) -->
+                    <g class="star" text-anchor="middle">
+                        <text x="205" y="245" font-size="22">★</text>
+                        <text x="250" y="252" font-size="30">★</text>
+                        <text x="300" y="260" font-size="42">★</text>
+                        <text x="350" y="252" font-size="30">★</text>
+                        <text x="395" y="245" font-size="22">★</text>
+                    </g>
+
+                    <!-- Texto Inferior GORBEA -->
+                    <text x="300" y="305" class="text-gorbea" text-anchor="middle">GORBEA</text>
+                </svg>
