@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- 
+    ====================================================================
+    Proyecto: Generador de Liquidaciones de Sueldo (HTML a PDF)
+    Desarrollador: C1º (Met.) Francisco Salas Muñoz
+    ====================================================================
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Liquidación</title>
+    <!-- Librería para generar el PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -61,7 +68,7 @@
 
         .document-page {
             width: 215.9mm;
-            min-height: 279.4mm; /* Tamaño Carta Exacto */
+            min-height: 279.4mm;
             background: white;
             border: none; 
             padding: 12mm 15mm;
@@ -70,7 +77,6 @@
             font-size: 11px;
             color: #000;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            overflow: hidden;
         }
 
         /* AJUSTES PARA MÓVIL */
@@ -89,9 +95,9 @@
                 padding-bottom: 50px;
             }
             .document-page {
-                transform: scale(0.42); 
+                transform: scale(0.45); 
                 transform-origin: top left;
-                margin-bottom: -580px; 
+                margin-bottom: -550px; 
             }
         }
 
@@ -135,9 +141,11 @@
 </head>
 <body>
 
+    <!-- ----- FORMULARIO DE INGRESO ----- -->
     <div class="controls-panel">
         <h2>Datos de la Liquidación</h2>
         
+        <!-- SECCIÓN EMPRESA -->
         <h3>Empresa Empleadora</h3>
         <div class="form-group">
             <label>Cargar Empresa Automática</label>
@@ -155,6 +163,7 @@
         <div class="form-group"><label>Firma: Nombre Representante</label><input type="text" id="in_emp_rep" value="R.L. Angélica Del Carmen Abello Valdebenito" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Firma: RUT Representante</label><input type="text" id="in_emp_rut_rep" value="15.250.363-6" oninput="formatearRUT(this)" maxlength="12"></div>
 
+        <!-- SECCIÓN DOCUMENTO Y FECHAS -->
         <h3>Documento y Fechas</h3>
         <div class="form-group"><label>Nº de Hoja / Folio</label><input type="text" id="in_folio" value="1" oninput="actualizarDoc()"></div>
         <div class="form-group">
@@ -177,6 +186,7 @@
         <div class="form-group"><label>Fecha de Ingreso</label><input type="text" id="in_fecha_ingreso" value="01-11-2024" oninput="formatearFecha(this)" maxlength="10"></div>
         <div class="form-group"><label>Fecha de Liquidación</label><input type="text" id="in_fecha_liq" value="30-04-2026" oninput="formatearFecha(this)" maxlength="10"></div>
 
+        <!-- SECCIÓN TRABAJADOR -->
         <h3>Trabajador</h3>
         <div class="form-group"><label>Nombre</label><input type="text" id="in_nombre" value="Maria Cecilia Escobar Sanhueza" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>RUT</label><input type="text" id="in_rut" value="18.485.133-4" oninput="formatearRUT(this)" maxlength="12"></div>
@@ -198,6 +208,7 @@
         </div>
         <div class="form-group"><label>ISAPRE/FONASA</label><input type="text" id="in_nom_salud" value="Fonasa" oninput="actualizarDoc()"></div>
 
+        <!-- SECCIÓN HABERES -->
         <h3>Haberes</h3>
         <div class="form-group"><label>Sueldo Base ($)</label><input type="number" id="in_sueldo_base" value="539000" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Bonificaciones ($)</label><input type="number" id="in_bonos" value="0" oninput="actualizarDoc()"></div>
@@ -206,6 +217,7 @@
         <div class="form-group"><label>Asig. Familiar ($)</label><input type="number" id="in_familiar" value="0" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Otros Haberes ($)</label><input type="number" id="in_otros_haberes" value="0" oninput="actualizarDoc()"></div>
 
+        <!-- SECCIÓN DESCUENTOS -->
         <h3>Descuentos</h3>
         <div class="form-group"><label>Descuento Previsional AFP ($)</label><input type="number" id="in_afp" value="71283" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Descuento Salud ($)</label><input type="number" id="in_fonasa" value="47163" oninput="actualizarDoc()"></div>
@@ -214,6 +226,7 @@
         <div class="form-group"><label>Descuento Préstamos ($)</label><input type="number" id="in_prestamo" value="0" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Otros Descuentos ($)</label><input type="number" id="in_otros_desc" value="0" oninput="actualizarDoc()"></div>
 
+        <!-- SECCIÓN CIERRE -->
         <h3>Cierre</h3>
         <div class="form-group"><label>Anticipo de Sueldo ($)</label><input type="number" id="in_anticipo" value="16910" oninput="actualizarDoc()"></div>
         
@@ -229,10 +242,12 @@
         </div>
     </div>
 
+    <!-- ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- -->
     <div class="preview-panel">
         <div class="document-page" id="documento-pdf">
             
             <div class="content-box">
+                <!-- ENCABEZADO -->
                 <table class="w-100 border-collapse" style="margin-bottom: 25px;">
                     <tr>
                         <td style="width: 25%; text-align: left; vertical-align: top; border: none;">
@@ -247,6 +262,7 @@
                     </tr>
                 </table>
 
+                <!-- DATOS EMPLEADOR Y TRABAJADOR -->
                 <table class="w-100 border-collapse" style="margin-bottom: 20px; font-size: 11px; table-layout: fixed; width: 100%;">
                     <tr>
                         <td style="width: 22%; padding: 3px 0; border: none; white-space: nowrap; vertical-align: top;">Razón Social de la Empresa:</td>
@@ -286,6 +302,7 @@
                     </tr>
                 </table>
 
+                <!-- TABLAS HABERES Y DESCUENTOS -->
                 <table class="w-100 border-collapse" style="margin-bottom: 25px;">
                     <tr>
                         <td style="width: 48%; padding: 0; vertical-align: top; border: none;">
@@ -318,6 +335,7 @@
                     </tr>
                 </table>
 
+                <!-- TABLA RESUMEN FINAL -->
                 <table class="border-collapse table-bordered" style="width: 82%; margin: 0 auto; margin-bottom: 60px;">
                     <tr>
                         <th class="text-center" style="width: 50%;">Resumen Final</th>
@@ -345,6 +363,7 @@
                     </tr>
                 </table>
 
+                <!-- FIRMAS -->
                 <table class="w-100 border-collapse" style="text-align: center; font-weight: bold; font-size: 11px;">
                     <tr>
                         <td style="width: 35%; border: none; vertical-align: bottom;">
@@ -363,6 +382,7 @@
                     </tr>
                 </table>
 
+                <!-- TEXTO LEGAL -->
                 <div class="legal-text">
                     Declaro haber recibido en conformidad el pago total de mi remuneración correspondiente al periodo indicado, incluyendo todos los haberes y descuentos detallados en la presente liquidación de sueldo. Con esto, no tengo reclamaciones pendientes respecto al monto liquidado.
                 </div>
@@ -371,6 +391,7 @@
         </div>
     </div>
 
+    <!-- ----- SCRIPT PARA LÓGICA Y PDF ----- -->
     <script>
         // === BASE DE DATOS DE EMPRESAS ===
         const baseDatosEmpresas = {
@@ -569,40 +590,26 @@
             document.getElementById('out_letras').innerText = textoLiquido;
         }
 
+        // Exportar PDF con nombre dinámico y manejo de promesas/errores
         function generarPDF() {
             if (typeof html2pdf === 'undefined') {
                 alert("La librería para generar el PDF no pudo cargar. Revisa tu conexión a internet.");
                 return;
             }
 
-            const elementoOriginal = document.getElementById('documento-pdf');
+            const elemento = document.getElementById('documento-pdf');
             const boton = document.getElementById('btn_descarga');
             
+            // Cambiar estado del botón mientras carga
             boton.disabled = true;
             boton.innerText = "Generando PDF...";
 
+            // OBTENER NOMBRE Y FECHA PARA EL ARCHIVO
             const nombreTrabajador = document.getElementById('in_nombre').value.trim() || 'Trabajador';
             const periodo = document.getElementById('in_periodo').value.trim() || 'Periodo';
             const nombreArchivo = `Liquidacion - ${nombreTrabajador} - ${periodo}.pdf`;
 
-            // -----------------------------------------------------------------------
-            // SOLUCIÓN PARA MÓVILES: CREAR UN CLON DEL DOCUMENTO A TAMAÑO REAL
-            // -----------------------------------------------------------------------
-            const clon = elementoOriginal.cloneNode(true);
-            
-            // Le aplicamos reglas CSS estrictas para ignorar cualquier adaptación de móvil
-            clon.style.setProperty('transform', 'none', 'important');
-            clon.style.setProperty('width', '215.9mm', 'important');
-            clon.style.setProperty('min-height', '279.4mm', 'important');
-            clon.style.setProperty('margin', '0', 'important');
-            // Lo escondemos fuera de la pantalla para que el usuario no lo note
-            clon.style.setProperty('position', 'absolute', 'important');
-            clon.style.setProperty('top', '-9999px', 'important');
-            clon.style.setProperty('left', '-9999px', 'important');
-            
-            // Lo agregamos a la página invisiblemente
-            document.body.appendChild(clon);
-
+            // OPCIONES OPTIMIZADAS PARA MÓVIL Y SEGURIDAD
             const opciones = {
                 margin:       0,
                 filename:     nombreArchivo,
@@ -611,26 +618,23 @@
                     scale: 2, 
                     useCORS: true, 
                     scrollY: 0,
-                    windowWidth: 1200 // Forza un tamaño de pantalla grande
+                    windowWidth: 1200 // MUY IMPORTANTE: Engaña al renderizador para que ignore la escala móvil
                 },
                 jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
             };
 
-            // Mandamos a crear el PDF desde el CLON, no desde el que está encogido en pantalla
-            html2pdf().set(opciones).from(clon).save()
+            // Ejecutar y manejar el resultado
+            html2pdf().set(opciones).from(elemento).save()
                 .then(() => {
-                    // Borramos el clon cuando termina
-                    document.body.removeChild(clon); 
+                    // Restaurar botón al terminar
                     boton.disabled = false;
                     boton.innerText = "Descargar PDF Carta";
                 })
                 .catch(err => {
-                    // Borramos el clon incluso si hay error
-                    document.body.removeChild(clon);
                     console.error("Error al generar PDF: ", err);
                     boton.disabled = false;
                     boton.innerText = "Descargar PDF Carta";
-                    alert("Ocurrió un error al procesar el archivo.");
+                    alert("Ocurrió un error al generar la descarga.\n\nSi estás probando el archivo localmente en un teléfono, intenta usar un logo en formato Base64 o prueba el archivo subiéndolo a un servidor web.");
                 });
         }
 
