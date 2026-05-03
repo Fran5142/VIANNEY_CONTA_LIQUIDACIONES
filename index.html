@@ -44,10 +44,8 @@
         .btn-generar {
             width: 100%; padding: 12px; background-color: #28a745; color: white; border: none;
             border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px;
-            transition: background-color 0.3s;
         }
         .btn-generar:hover { background-color: #218838; }
-        .btn-generar:disabled { background-color: #6c757d; cursor: not-allowed; }
 
         .autor-credito {
             margin-top: 25px;
@@ -58,7 +56,7 @@
             padding-top: 10px;
         }
 
-        /* ----- VISTA PREVIA DEL DOCUMENTO ----- */
+        /* ----- VISTA PREVIA DEL DOCUMENTO (EL PDF) ----- */
         .preview-panel {
             width: 70%;
             display: flex;
@@ -76,32 +74,8 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 11px;
             color: #000;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* AJUSTES PARA MÓVIL */
-        @media screen and (max-width: 1024px) {
-            body {
-                flex-direction: column;
-                padding: 10px;
-            }
-            .controls-panel, .preview-panel {
-                width: 100%;
-                max-height: none;
-            }
-            .preview-panel {
-                overflow-x: auto;
-                justify-content: flex-start;
-                padding-bottom: 50px;
-            }
-            .document-page {
-                transform: scale(0.45); 
-                transform-origin: top left;
-                margin-bottom: -550px; 
-            }
-        }
-
-        /* ----- ESTILOS INTERNOS DEL DOCUMENTO ----- */
         .content-box {
             border: 2px solid black;
             padding: 20px;
@@ -206,6 +180,7 @@
                 <option value="Capredena">Capredena</option>
             </select>
         </div>
+
         <div class="form-group"><label>ISAPRE/FONASA</label><input type="text" id="in_nom_salud" value="Fonasa" oninput="actualizarDoc()"></div>
 
         <!-- SECCIÓN HABERES -->
@@ -226,16 +201,16 @@
         <div class="form-group"><label>Descuento Préstamos ($)</label><input type="number" id="in_prestamo" value="0" oninput="actualizarDoc()"></div>
         <div class="form-group"><label>Otros Descuentos ($)</label><input type="number" id="in_otros_desc" value="0" oninput="actualizarDoc()"></div>
 
-        <!-- SECCIÓN CIERRE -->
+        <!-- SECCIÓN CIERRE Y LETRAS MANUALES -->
         <h3>Cierre</h3>
         <div class="form-group"><label>Anticipo de Sueldo ($)</label><input type="number" id="in_anticipo" value="16910" oninput="actualizarDoc()"></div>
         
         <div class="form-group">
-            <label>Sueldo Líquido en Letras</label>
+            <label>Sueldo Líquido en Letras (Automático/Editable)</label>
             <input type="text" id="in_letras_manual" oninput="actualizarLetrasManual()">
         </div>
 
-        <button id="btn_descarga" class="btn-generar" onclick="generarPDF()">Descargar PDF Carta</button>
+        <button class="btn-generar" onclick="generarPDF()">Descargar PDF Carta</button>
 
         <div class="autor-credito">
             Dev: <strong>C1º (Met.) Francisco Salas Muñoz</strong>
@@ -247,11 +222,12 @@
         <div class="document-page" id="documento-pdf">
             
             <div class="content-box">
-                <!-- ENCABEZADO -->
+                
+                <!-- ENCABEZADO CORREGIDO: ALINEACIÓN SUPERIOR -->
                 <table class="w-100 border-collapse" style="margin-bottom: 25px;">
                     <tr>
                         <td style="width: 25%; text-align: left; vertical-align: top; border: none;">
-                            <img id="img_logo_empresa" src="logo comercial santa teresa spa.png" alt="Logo Empresa" style="max-width: 130px; height: auto; display: block;" onerror="this.style.display='none'">
+                            <img id="img_logo_empresa" src="logo comercial santa teresa spa.png" alt="Logo Empresa" style="max-width: 130px; height: auto; display: block;">
                         </td>
                         <td style="width: 50%; text-align: center; vertical-align: top; padding-top: 10px; border: none;">
                             <span style="font-weight: bold; font-size: 15px;">LIQUIDACIÓN DE SUELDO</span>
@@ -409,7 +385,7 @@
                 dir: "Laguna Icalma 6354 Valle verde, Estación Central",
                 rep_nombre: "Servicios Forestales Henriquez SPA",
                 rep_rut: "77.492.947-9",
-                logo: ""
+                logo: "***"
             },
             "empresa_tres": {
                 razon: "Rinconada de sabores SPA",
@@ -425,7 +401,7 @@
                 dir: "PADRE ALBERTO HURTADO 1550 JUAN PABLO II COMUNA TEMUCO",
                 rep_nombre: "R.L. IGNACIO ANDRES JOFRE FERNANDEZ",
                 rep_rut: "17289534-4",
-                logo: ""
+                logo: "***"
             },
             "empresa_cinco": {
                 razon: "CHEHUIN AUTOMATIZACIÓN INDUSTRIAL SPA",
@@ -433,7 +409,7 @@
                 dir: "A Varas 979 Oficina 801, Temuco",
                 rep_nombre: "R.L. Juan Elías Chehuin Puelpan",
                 rep_rut: "19.175.427-1",
-                logo: ""
+                logo: "***"
             }
         };
 
@@ -447,14 +423,7 @@
                 document.getElementById('in_emp_dir').value = empresa.dir;
                 document.getElementById('in_emp_rep').value = empresa.rep_nombre;
                 document.getElementById('in_emp_rut_rep').value = empresa.rep_rut;
-                
-                const imgLogo = document.getElementById('img_logo_empresa');
-                if(empresa.logo && empresa.logo !== "***" && empresa.logo !== "") {
-                    imgLogo.src = empresa.logo;
-                    imgLogo.style.display = 'block';
-                } else {
-                    imgLogo.style.display = 'none';
-                }
+                document.getElementById('img_logo_empresa').src = empresa.logo;
                 actualizarDoc();
             }
         }
@@ -590,52 +559,32 @@
             document.getElementById('out_letras').innerText = textoLiquido;
         }
 
-        // Exportar PDF con nombre dinámico y manejo de promesas/errores
+        // Exportar PDF con nombre dinámico y manejo de errores
         function generarPDF() {
+            const elemento = document.getElementById('documento-pdf');
+            
             if (typeof html2pdf === 'undefined') {
                 alert("La librería para generar el PDF no pudo cargar. Revisa tu conexión a internet.");
                 return;
             }
 
-            const elemento = document.getElementById('documento-pdf');
-            const boton = document.getElementById('btn_descarga');
-            
-            // Cambiar estado del botón mientras carga
-            boton.disabled = true;
-            boton.innerText = "Generando PDF...";
-
             // OBTENER NOMBRE Y FECHA PARA EL ARCHIVO
             const nombreTrabajador = document.getElementById('in_nombre').value.trim() || 'Trabajador';
-            const periodo = document.getElementById('in_periodo').value.trim() || 'Periodo';
-            const nombreArchivo = `Liquidacion - ${nombreTrabajador} - ${periodo}.pdf`;
+            const fechaLiq = document.getElementById('in_fecha_liq').value.trim() || 'Fecha';
+            const nombreArchivo = `Liquidacion - ${nombreTrabajador} - ${fechaLiq}.pdf`;
 
-            // OPCIONES OPTIMIZADAS PARA MÓVIL Y SEGURIDAD
             const opciones = {
                 margin:       0,
-                filename:     nombreArchivo,
+                filename:     nombreArchivo, // USAMOS LA VARIABLE DEL NOMBRE
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    scrollY: 0,
-                    windowWidth: 1200 // MUY IMPORTANTE: Engaña al renderizador para que ignore la escala móvil
-                },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
                 jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
             };
 
-            // Ejecutar y manejar el resultado
-            html2pdf().set(opciones).from(elemento).save()
-                .then(() => {
-                    // Restaurar botón al terminar
-                    boton.disabled = false;
-                    boton.innerText = "Descargar PDF Carta";
-                })
-                .catch(err => {
-                    console.error("Error al generar PDF: ", err);
-                    boton.disabled = false;
-                    boton.innerText = "Descargar PDF Carta";
-                    alert("Ocurrió un error al generar la descarga.\n\nSi estás probando el archivo localmente en un teléfono, intenta usar un logo en formato Base64 o prueba el archivo subiéndolo a un servidor web.");
-                });
+            html2pdf().set(opciones).from(elemento).save().catch(err => {
+                console.error("Error al generar PDF: ", err);
+                alert("El navegador bloqueó la descarga. Esto suele pasar si abres el HTML localmente (file://) y tienes una imagen (logo) insertada. Intenta borrar el src del logo o convertir la imagen a Base64.");
+            });
         }
 
         actualizarDoc();
